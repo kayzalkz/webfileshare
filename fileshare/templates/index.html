@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Sharing</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+        :root {
+            --bg-color: #0d0e1b;
+            --card-bg-color: #1a1b2e;
+            --text-color: #00ffff;
+            --primary-color: #ff00ff;
+            --button-color: #00ff00;
+            --button-hover-color: #ff00ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background: linear-gradient(45deg, #ff00ff 0%, #00ffff 100%);
+            opacity: 0.1;
+        }
+
+        .container {
+            background-color: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid var(--primary-color);
+        }
+
+        h1 {
+            margin-bottom: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 28px;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label, button, .button {
+            background-color: var(--button-color);
+            color: var(--bg-color);
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 24px;
+            font-weight: 600;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 2px solid var(--button-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-label:hover, button:hover, .button:hover {
+            background-color: var(--button-hover-color);
+            color: var(--text-color);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--button-hover-color);
+        }
+
+        .file-label::before, button::before, .button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+        }
+
+        .file-label:hover::before, button:hover::before, .button:hover::before {
+            left: 100%;
+        }
+
+        #qr-code {
+            margin-top: 32px;
+        }
+
+        #qr-code img {
+            max-width: 200px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid var(--primary-color);
+        }
+
+        .store-links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .store-link img {
+            width: 150px;
+            height: auto;
+            transition: transform 0.1s ease;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+        }
+
+        .store-link img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="container">
+        <h1>File Sharing</h1>
+        <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+            <label for="file-upload" class="file-label">
+                Choose a file (up to 1GB)
+            </label>
+            <input id="file-upload" type="file" name="file" required>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="qr-code">
+            <h2>Scan to access this page</h2>
+            <img src="{{ url_for('get_qr', data=request.url) }}" alt="QR Code for this page">
+        </div>
+        <div class="store-links">
+            <a href="https://play.google.com/store/apps/details?id=com.ccpp.msp" class="store-link" target="_blank">
+                <img src="{{ url_for('static', filename='img/google-play-badge.png') }}" alt="Get it on Google Play">
+            </a>
+            <a href="https://mandalaysmartpay.com/direct/MSP.apk" class="store-link" target="_blank">
+                <img src="{{ url_for('static', filename='img/msp.png') }}" alt="Visit Our Website">
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('file-upload').addEventListener('change', function(e) {
+            var fileName = e.target.files[0].name;
+            document.querySelector('.file-label').textContent = fileName;
+        });
+    </script>
+</body>
+</html>

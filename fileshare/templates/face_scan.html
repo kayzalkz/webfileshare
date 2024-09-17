@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Scan - Cyberpunk File Sharing App</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+        :root {
+            --bg-color: #0d0e1b;
+            --card-bg-color: #1a1b2e;
+            --text-color: #00ffff;
+            --primary-color: #ff00ff;
+            --button-color: #00ff00;
+            --button-hover-color: #ff00ff;
+            --error-color: #ff0000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background: linear-gradient(45deg, #ff00ff 0%, #00ffff 100%);
+            opacity: 0.1;
+        }
+
+        .container {
+            background-color: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid var(--primary-color);
+        }
+
+        h1 {
+            margin-bottom: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 28px;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #videoElement {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+        }
+
+        #captureButton {
+            background-color: var(--button-color);
+            color: var(--bg-color);
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 24px;
+            font-weight: 600;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 2px solid var(--button-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #captureButton:hover {
+            background-color: var(--button-hover-color);
+            color: var(--text-color);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--button-hover-color);
+        }
+
+        #captureButton::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+        }
+
+        #captureButton:hover::before {
+            left: 100%;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .error {
+            color: var(--error-color);
+        }
+
+        #debug {
+            margin-top: 20px;
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="container">
+        <h1>Face Scan</h1>
+        <video id="videoElement" autoplay playsinline></video>
+        <button id="captureButton">Capture and Verify</button>
+        <p id="status"></p>
+        <div id="debug"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const captureButton = document.getElementById('captureButton');
+        const status = document.getElementById('status');
+        const debug = document.getElementById('debug');
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                debug.innerHTML += "Camera setup successful<br>";
+            } catch (error) {
+                console.error('Error accessing the camera:', error);
+                status.textContent = 'Error accessing the camera. Please check your permissions.';
+                status.classList.add('error');
+                debug.innerHTML += `Camera setup error: ${error.message}<br>`;
+            }
+        }
+
+        setupCamera();
+
+        captureButton.addEventListener('click', async () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                const imageDataUrl = canvas.toDataURL('image/jpeg');
+
+                status.textContent = 'Verifying...';
+                debug.innerHTML += "Capture button clicked<br>";
+
+                const response = await fetch('/verify_face', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageDataUrl }),
+                });
+
+                const result = await response.json();
+                debug.innerHTML += `Server response: ${JSON.stringify(result)}<br>`;
+
+                if (result.success) {
+                    status.textContent = 'Access granted!';
+                    setTimeout(() => {
+                        window.location.href = '/index';
+                    }, 1000);
+                } else {
+                    status.textContent = 'Access denied. Please try again.';
+                    status.classList.add('error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = 'An error occurred. Please try again.';
+                status.classList.add('error');
+                debug.innerHTML += `Capture error: ${error.message}<br>`;
+            }
+        });
+    </script>
+</body>
+</html>
